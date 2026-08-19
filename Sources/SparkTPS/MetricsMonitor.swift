@@ -89,7 +89,7 @@ final class MetricsMonitor: ObservableObject {
 
     var menuBarText: String {
         if isIdleAlerting, flashPhase {
-            return "⚠ Idle \(idleAlertMinutes)m"
+            return "🔴 Idle \(idleAlertMinutes)m"
         }
         return regularMenuBarText
     }
