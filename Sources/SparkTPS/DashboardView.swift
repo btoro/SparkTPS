@@ -178,7 +178,7 @@ struct DashboardView: View {
         case .connecting: "Connecting…"
         case .connected:
             (monitor.snapshot?.queuedRequests ?? 0) > 0 ? "Serving with queued work" : "Connected"
-        case .offline(let message): message
+        case .offline(let message): "\(message) · retrying every 5s"
         }
     }
 

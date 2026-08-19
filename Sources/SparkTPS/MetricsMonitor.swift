@@ -89,7 +89,7 @@ final class MetricsMonitor: ObservableObject {
 
     var menuBarText: String {
         if isIdleAlerting, flashPhase {
-            return "🔴 Idle \(idleAlertMinutes)m"
+            return "🟢 · 🔴 Idle \(idleAlertMinutes)m"
         }
         return regularMenuBarText
     }
@@ -97,14 +97,15 @@ final class MetricsMonitor: ObservableObject {
     private var regularMenuBarText: String {
         switch connectionState {
         case .needsConfiguration:
-            return "Setup"
+            return "🟡 Setup"
         case .connecting:
-            return "… t/s · …r"
+            return "🟡 … t/s · …r"
         case .offline:
-            return "— t/s · —r"
+            return "🔴 — t/s · —r"
         case .connected:
-            guard let snapshot else { return "… t/s · …r" }
-            return "\(formatTPS(summary.outputTPS)) t/s · \(snapshot.activeRequests)r"
+            guard let snapshot else { return "🟡 … t/s · …r" }
+            let health = snapshot.queuedRequests > 0 ? "🟠" : "🟢"
+            return "\(health) \(formatTPS(summary.outputTPS)) t/s · \(snapshot.activeRequests)r"
         }
     }
 
@@ -147,10 +148,15 @@ final class MetricsMonitor: ObservableObject {
                 setIdleAlerting(false)
             }
 
-            let busy = (snapshot?.activeRequests ?? 0) > 0
-                || (snapshot?.queuedRequests ?? 0) > 0
-                || summary.outputTPS >= 0.05
-            let interval: UInt64 = busy ? 1_000_000_000 : 5_000_000_000
+            let interval: UInt64
+            if case .offline = connectionState {
+                interval = 5_000_000_000
+            } else {
+                let busy = (snapshot?.activeRequests ?? 0) > 0
+                    || (snapshot?.queuedRequests ?? 0) > 0
+                    || summary.outputTPS >= 0.05
+                interval = busy ? 1_000_000_000 : 5_000_000_000
+            }
             try? await Task.sleep(nanoseconds: interval)
         }
     }
