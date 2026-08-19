@@ -10,7 +10,6 @@ struct SparkTPSApp: App {
         } label: {
             Text(monitor.menuBarText)
                 .monospacedDigit()
-                .foregroundStyle(monitor.isIdleAlerting && monitor.flashPhase ? Color.red : Color.primary)
                 .task { monitor.start() }
         }
         .menuBarExtraStyle(.window)

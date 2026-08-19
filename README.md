@@ -12,7 +12,7 @@ The popover adds input/output/total TPS, one-minute average and peak, active and
 
 The menu bar includes an always-visible health indicator: green when metrics are healthy, orange when work is queued, yellow while connecting, and red when offline. Offline connections retry indefinitely every five seconds.
 
-An optional idle alert flashes the menu-bar text with a red idle warning after a configurable period without inference activity. It is enabled by default at 10 minutes. The bell in the popover header switches it on or off, while the threshold remains in Settings. Opening the menu item dismisses the alert until new activity resumes.
+An optional idle alert flashes a separate red alarm-clock icon after a configurable period without inference activity, keeping it distinct from the connection-health indicator. It is enabled by default at 10 minutes. The bell in the popover header switches it on or off, while the threshold remains in Settings. Opening the menu item dismisses the alert until new activity resumes.
 
 ## Why direct metrics instead of Grafana?
 
