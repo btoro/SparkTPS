@@ -1,0 +1,5 @@
+.build/
+dist/
+SparkTPS-*.zip
+.DS_Store
+*.xcuserstate
