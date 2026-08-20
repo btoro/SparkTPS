@@ -5,6 +5,8 @@ struct EndpointSettingsView: View {
     @Binding var isExpanded: Bool
     @State private var draftEndpoint = ""
     @State private var draftIdleAlertMinutes = 10
+    @State private var draftInputRate = 1.0
+    @State private var draftOutputRate = 6.0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -28,6 +30,23 @@ struct EndpointSettingsView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+            Divider()
+            Text("Cost estimate")
+                .font(.caption.weight(.semibold))
+            HStack {
+                Text("Input $")
+                TextField("1.00", value: $draftInputRate, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                Text("Output $")
+                TextField("6.00", value: $draftOutputRate, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                Text("/ 1M")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption)
+            Text("Configure the input and output price per million tokens used for the estimate. Defaults are $1 input and $6 output.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             HStack {
                 Spacer()
                 Button("Save & Connect", action: save)
@@ -40,12 +59,15 @@ struct EndpointSettingsView: View {
         .onAppear {
             draftEndpoint = monitor.endpoint
             draftIdleAlertMinutes = monitor.idleAlertMinutes
+            draftInputRate = monitor.inputPricePerMillion
+            draftOutputRate = monitor.outputPricePerMillion
         }
     }
 
     private func save() {
         monitor.saveEndpoint(draftEndpoint)
         monitor.saveIdleAlert(enabled: monitor.idleAlertEnabled, minutes: draftIdleAlertMinutes)
+        monitor.savePricing(inputPerMillion: draftInputRate, outputPerMillion: draftOutputRate)
         isExpanded = false
     }
 }

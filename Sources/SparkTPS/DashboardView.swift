@@ -74,10 +74,18 @@ struct DashboardView: View {
                     MetricCard(title: "Processed 1m", value: "\(monitor.summary.processedLastMinute)", tint: .teal)
                 }
 
+                HStack(spacing: 10) {
+                    MetricCard(title: "Today input", value: tokens(monitor.todayUsage.inputTokens), tint: .purple)
+                    MetricCard(title: "Today output", value: tokens(monitor.todayUsage.outputTokens), tint: .blue)
+                    MetricCard(title: "Cost estimate", value: cost(monitor.todayEstimatedCost), tint: .mint)
+                }
+
                 HStack {
                     SmallStat(title: "1m average", value: "\(format(monitor.summary.minuteOutputAverage)) t/s")
                     Spacer()
                     SmallStat(title: "1m peak", value: "\(format(monitor.summary.minuteOutputPeak)) t/s")
+                    Spacer()
+                    SmallStat(title: "Today max", value: "\(format(monitor.todayPeakTPS)) t/s")
                     Spacer()
                     SmallStat(title: "Engine total", value: integer(snapshot.processedRequests))
                 }
@@ -200,6 +208,18 @@ struct DashboardView: View {
 
     private func integer(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(0)))
+    }
+
+    private func tokens(_ value: Double) -> String {
+        if value >= 1_000_000 { return String(format: "%.2fM", value / 1_000_000) }
+        if value >= 1_000 { return String(format: "%.1fk", value / 1_000) }
+        return String(format: "%.0f", value)
+    }
+
+    private func cost(_ value: Double) -> String {
+        if value >= 100 { return String(format: "$%.0f", value) }
+        if value >= 1 { return String(format: "$%.2f", value) }
+        return String(format: "$%.4f", value)
     }
 }
 

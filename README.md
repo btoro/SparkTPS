@@ -10,6 +10,10 @@ The menu bar itself always shows a five-second rolling average of aggregate outp
 
 The popover adds input/output/total TPS, one-minute average and peak, active and queued requests, recent and engine-lifetime processed request counts, and a 60-second throughput chart.
 
+SparkTPS stores five-second historical samples in a small local SQLite database. Detailed samples are retained for 30 days, while daily peak rollups are kept indefinitely. Today's maximum output TPS appears in the popover.
+
+Daily input and output token deltas are also retained across launches and counter resets. The popover shows a cost estimate using configurable per-million-token rates (default: $1 input and $6 output). This is a token-rate estimate, not the Spark's electricity or hardware cost.
+
 The menu bar includes an always-visible health indicator: green when metrics are healthy, orange when work is queued, yellow while connecting, and red when offline. Offline connections retry indefinitely every five seconds.
 
 An optional idle alert flashes a separate red alarm-clock icon after a configurable period without inference activity, keeping it distinct from the connection-health indicator. It is enabled by default at 10 minutes. The bell in the popover header switches it on or off, while the threshold remains in Settings. Opening the menu item dismisses the alert until new activity resumes.

@@ -10,7 +10,11 @@ let package = Package(
         .executable(name: "SparkTPS", targets: ["SparkTPS"]),
     ],
     targets: [
-        .target(name: "SparkTPSCore"),
+        .systemLibrary(name: "CSQLite"),
+        .target(
+            name: "SparkTPSCore",
+            dependencies: ["CSQLite"]
+        ),
         .executableTarget(
             name: "SparkTPS",
             dependencies: ["SparkTPSCore"]
