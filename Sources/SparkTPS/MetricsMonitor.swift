@@ -16,13 +16,18 @@ final class MetricsMonitor: ObservableObject {
     @Published private(set) var summary = MetricsSummary()
     @Published private(set) var historyPoints: [HistoryPoint] = []
     @Published private(set) var lastUpdated: Date?
+    @Published private(set) var todayPeakTPS: Double = 0
+    @Published private(set) var todayUsage = DailyTokenUsage()
     @Published private(set) var isIdleAlerting = false
     @Published private(set) var flashPhase = false
     @Published var endpoint: String
     @Published var idleAlertEnabled: Bool
     @Published var idleAlertMinutes: Int
+    @Published var inputPricePerMillion: Double
+    @Published var outputPricePerMillion: Double
 
     private let client = MetricsClient()
+    private let store: MetricsStore?
     private var history = MetricsHistory()
     private var idleAlertTracker = IdleAlertTracker()
     private var pollingTask: Task<Void, Never>?
@@ -31,6 +36,8 @@ final class MetricsMonitor: ObservableObject {
     private static let endpointKey = "metricsEndpoint"
     private static let idleAlertEnabledKey = "idleAlertEnabled"
     private static let idleAlertMinutesKey = "idleAlertMinutes"
+    private static let inputPriceKey = "inputPricePerMillion"
+    private static let outputPriceKey = "outputPricePerMillion"
 
     init() {
         let savedEndpoint = UserDefaults.standard.string(forKey: Self.endpointKey) ?? ""
@@ -38,7 +45,14 @@ final class MetricsMonitor: ObservableObject {
         idleAlertEnabled = UserDefaults.standard.object(forKey: Self.idleAlertEnabledKey) as? Bool ?? true
         let savedMinutes = UserDefaults.standard.integer(forKey: Self.idleAlertMinutesKey)
         idleAlertMinutes = savedMinutes > 0 ? savedMinutes : 10
+        inputPricePerMillion = UserDefaults.standard.object(forKey: Self.inputPriceKey) == nil
+            ? 1.0
+            : UserDefaults.standard.double(forKey: Self.inputPriceKey)
+        outputPricePerMillion = UserDefaults.standard.object(forKey: Self.outputPriceKey) == nil
+            ? 6.0
+            : UserDefaults.standard.double(forKey: Self.outputPriceKey)
         connectionState = savedEndpoint.isEmpty ? .needsConfiguration : .connecting
+        store = try? MetricsStore(databaseURL: Self.databaseURL)
     }
 
     deinit {
@@ -49,6 +63,7 @@ final class MetricsMonitor: ObservableObject {
     func start() {
         guard pollingTask == nil else { return }
         pollingTask = Task { [weak self] in
+            await self?.loadTodayPeak()
             await self?.pollingLoop()
         }
     }
@@ -71,6 +86,13 @@ final class MetricsMonitor: ObservableObject {
         UserDefaults.standard.set(idleAlertMinutes, forKey: Self.idleAlertMinutesKey)
         idleAlertTracker.reset(at: Date())
         setIdleAlerting(false)
+    }
+
+    func savePricing(inputPerMillion: Double, outputPerMillion: Double) {
+        inputPricePerMillion = max(0, inputPerMillion)
+        outputPricePerMillion = max(0, outputPerMillion)
+        UserDefaults.standard.set(inputPricePerMillion, forKey: Self.inputPriceKey)
+        UserDefaults.standard.set(outputPricePerMillion, forKey: Self.outputPriceKey)
     }
 
     func toggleIdleAlert() {
@@ -138,6 +160,7 @@ final class MetricsMonitor: ObservableObject {
                 snapshot = newSnapshot
                 summary = history.append(newSnapshot)
                 historyPoints = history.points
+                await record(newSnapshot)
                 lastUpdated = newSnapshot.timestamp
                 connectionState = .connected
                 updateIdleAlert(previous: previousSnapshot, current: newSnapshot)
@@ -165,6 +188,41 @@ final class MetricsMonitor: ObservableObject {
         if value >= 100 { return String(format: "%.0f", value) }
         if value >= 10 { return String(format: "%.1f", value) }
         return String(format: "%.2f", value)
+    }
+
+    private func loadTodayPeak() async {
+        guard let store else { return }
+        if let peak = try? await store.peak() {
+            todayPeakTPS = peak.outputTPS
+        }
+        if let usage = try? await store.usage() {
+            todayUsage = usage
+        }
+    }
+
+    private func record(_ snapshot: MetricsSnapshot) async {
+        guard let store,
+              let day = try? await store.record(snapshot: snapshot, summary: summary, source: endpoint)
+        else { return }
+        todayPeakTPS = day.peak.outputTPS
+        todayUsage = day.usage
+    }
+
+    var todayEstimatedCost: Double {
+        todayUsage.estimatedCost(
+            inputPricePerMillion: inputPricePerMillion,
+            outputPricePerMillion: outputPricePerMillion
+        )
+    }
+
+    private static var databaseURL: URL {
+        let applicationSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first!
+        return applicationSupport
+            .appendingPathComponent("SparkTPS", isDirectory: true)
+            .appendingPathComponent("history.sqlite")
     }
 
     private func updateIdleAlert(previous: MetricsSnapshot?, current: MetricsSnapshot) {
