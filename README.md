@@ -4,9 +4,8 @@ SparkTPS is a lightweight native macOS menu-bar monitor for live LLM inference t
 
 The menu bar itself always shows a five-second rolling average of aggregate output TPS and the number of requests actively being served, including zero values while idle:
 
-```text
-48.2 t/s · 2r
-```
+<img width="110" height="24" alt="image" src="https://github.com/user-attachments/assets/1df00994-4a23-45c8-a40f-8ab84d0ab029" />
+
 
 The popover adds input/output/total TPS, one-minute average and peak, active and queued requests, recent and engine-lifetime processed request counts, and a 60-second throughput chart.
 
@@ -14,9 +13,8 @@ The menu bar includes an always-visible health indicator: green when metrics are
 
 An optional idle alert flashes a separate red alarm-clock icon after a configurable period without inference activity, keeping it distinct from the connection-health indicator. It is enabled by default at 10 minutes. The bell in the popover header switches it on or off, while the threshold remains in Settings. Opening the menu item dismisses the alert until new activity resumes.
 
-## Why direct metrics instead of Grafana?
+<img width="351" height="470" alt="image" src="https://github.com/user-attachments/assets/5c51e193-e467-4c85-b378-a39514ae6572" />
 
-SparkTPS reads the inference engine's Prometheus-compatible `/metrics` endpoint directly. This avoids requiring Grafana credentials, data-source IDs, PromQL proxy calls, or a separate Prometheus/Grafana installation. Requests advertise gzip compression and adapt between one-second polling while busy and five-second polling while idle.
 
 ## Supported engines
 
